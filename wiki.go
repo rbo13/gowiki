@@ -1,10 +1,15 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"io/ioutil"
 	"net/http"
 	"regexp"
+
+	"database/sql"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type Page struct {
@@ -77,9 +82,35 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 }
 
 func main() {
-	http.HandleFunc("/view/", makeHandler(viewHandler))
-	http.HandleFunc("/edit/", makeHandler(editHandler))
-	http.HandleFunc("/save/", makeHandler(saveHandler))
 
-	http.ListenAndServe(":8080", nil)
+	db, err := sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/test_db?charset=utf8")
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	stmt, dberr := db.Prepare("INSERT userinfo SET username=?, firstname=?, lastname=?, createdat=?")
+
+	if dberr != nil {
+		fmt.Println(dberr)
+	}
+
+	res, inserr := stmt.Exec("bito", "richard", "burk", "August 30, 2017")
+
+	if inserr != nil {
+		fmt.Println(inserr)
+	}
+
+	id, reserr := res.LastInsertId()
+
+	if reserr != nil {
+		fmt.Println(reserr)
+	}
+
+	fmt.Println(id)
+	// http.HandleFunc("/view/", makeHandler(viewHandler))
+	// http.HandleFunc("/edit/", makeHandler(editHandler))
+	// http.HandleFunc("/save/", makeHandler(saveHandler))
+
+	// http.ListenAndServe(":8080", nil)
 }
